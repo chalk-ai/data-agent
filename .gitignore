@@ -1,0 +1,6 @@
+.workspace.env
+data/out/
+traces/2*.jsonl
+__pycache__/
+.venv/
+.ruff_cache/

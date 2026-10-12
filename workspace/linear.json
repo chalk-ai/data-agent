@@ -1,0 +1,56 @@
+{
+  "issues": [
+    {
+      "identifier": "BILL-118",
+      "title": "Retire STRM-LEGACY and report it under Relay",
+      "team": "Billing",
+      "state": "Done",
+      "updatedAt": "2026-04-02T10:15:00Z",
+      "description": "STRM-LEGACY is the pre-2025 streaming plan. New sales stopped in March 2026, but about a quarter of enterprise accounts still bill it until renewal.\n\nDecision: for all revenue reporting, count STRM-LEGACY as **Relay**. It is the same product on the old pricing.",
+      "comments": [
+        {"author": "Dana K. (Finance)", "body": "Confirmed with the controller. Relay, effective for all of 2026."},
+        {"author": "Leo M. (Billing)", "body": "Catalog page still lists it under Retired SKUs; I'll leave it there and point at this issue."}
+      ]
+    },
+    {
+      "identifier": "GTM-214",
+      "title": "AI-native review: Helix Bio, Granite Logistics, Nimbus Health",
+      "team": "GTM",
+      "state": "Done",
+      "updatedAt": "2026-09-30T17:45:00Z",
+      "description": "Three enterprise accounts signed this summer and are still 'Not reviewed' in the Enterprise account review database. Apply the AI-native definition and record the decisions here; the database will be updated in the next sync.",
+      "comments": [
+        {"author": "Priya N.", "body": "Helix Bio: **AI-native**. Their protein-design platform is a foundation model; it is the product."},
+        {"author": "Sam O.", "body": "Granite Logistics: **not AI-native**. Route optimisation is a classical solver; ML is only in their internal demand forecast."},
+        {"author": "Marco D.", "body": "Nimbus Health: **AI-native**. Clinical-note summarisation with an LLM is the core product."}
+      ]
+    },
+    {
+      "identifier": "FORGE-311",
+      "title": "GPU quota alerts flapping in us-east",
+      "team": "Forge",
+      "state": "In Progress",
+      "updatedAt": "2026-10-08T21:02:00Z",
+      "description": "Quota alerts fire and clear every few minutes for three AI-native tenants. Suspect the 60s scrape interval.",
+      "comments": []
+    },
+    {
+      "identifier": "PULSE-77",
+      "title": "Export dashboards to CSV",
+      "team": "Pulse",
+      "state": "Backlog",
+      "updatedAt": "2026-08-11T13:30:00Z",
+      "description": "Enterprise customers keep asking to export panels to CSV for their finance teams.",
+      "comments": []
+    },
+    {
+      "identifier": "GTM-209",
+      "title": "Q4 enterprise pipeline review",
+      "team": "GTM",
+      "state": "Todo",
+      "updatedAt": "2026-10-01T09:00:00Z",
+      "description": "Prep the Q4 pipeline review deck. Pull revenue by product from the finance dashboards.",
+      "comments": []
+    }
+  ]
+}
