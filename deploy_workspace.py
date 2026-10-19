@@ -2,39 +2,25 @@
 #
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["chalkcompute>=2.13.4"]
+# dependencies = ["chalkcompute>=2.13.8"]
 # ///
 """Deploy the fake Notion and fake Linear APIs as two small Chalk ScalingGroups.
 
 Each app gets its own random bearer token. The tokens and URLs are written to .workspace.env
 (gitignored), where run.py picks them up. Re-running reuses the existing tokens.
 
-    ./deploy_workspace.py [--env-id <environment>]
+    ./deploy_workspace.py
 """
 
 from __future__ import annotations
 
-import argparse
-import json
 import os
 import secrets
-import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ENV_FILE = HERE / ".workspace.env"
 APPS = ("notion", "linear")
-
-
-def load_chalk_env(env_id: str | None) -> None:
-    if "CHALK_CLIENT_ID" not in os.environ:
-        cfg = json.loads(subprocess.check_output(["chalk", "config", "--json"]))
-        os.environ["CHALK_API_SERVER"] = cfg["apiServer"]["value"]
-        os.environ["CHALK_CLIENT_ID"] = cfg["clientId"]["value"]
-        os.environ["CHALK_CLIENT_SECRET"] = cfg["clientSecret"]["value"]
-        os.environ.setdefault("CHALK_ENVIRONMENT_ID", cfg["environment"]["value"])
-    if env_id:
-        os.environ["CHALK_ENVIRONMENT_ID"] = env_id
 
 
 def read_env_file() -> dict[str, str]:
@@ -45,11 +31,6 @@ def read_env_file() -> dict[str, str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env-id", default=None)
-    parser.add_argument("--prefix", default="fake")
-    args = parser.parse_args()
-    load_chalk_env(args.env_id)
     from chalkcompute import Image, ScalingGroup, Secret
 
     saved = read_env_file()
@@ -68,7 +49,7 @@ def main() -> None:
         os.environ[f"FAKE_{token_key}"] = token
         sg = ScalingGroup(
             image=image,
-            name=f"{args.prefix}-{app}",
+            name=f'fake-{app}',
             cpu="500m",
             memory="1Gi",
             env={"WORKSPACE_KIND": app, "WORKSPACE_TOKEN": Secret.from_local_env(f"FAKE_{token_key}")},
