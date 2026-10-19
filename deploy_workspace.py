@@ -2,7 +2,7 @@
 #
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["chalkcompute>=2.13.4"]
+# dependencies = ["chalkcompute>=2.13.8"]
 # ///
 """Deploy the fake Notion and fake Linear APIs as two small Chalk ScalingGroups.
 

@@ -2,7 +2,7 @@
 #
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["chalkcompute>=2.13.4", "httpx"]
+# dependencies = ["chalkcompute>=2.13.8", "httpx"]
 # ///
 """Run the data agent in a Chalk sandbox with controlled access to ChalkSQL, Notion and Linear.
 
@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -97,17 +96,12 @@ def main() -> int:
     ws = load_config()
     from chalkcompute import ConnectClient, Image, NetworkPolicy, Sandbox, SandboxClient, Secret
 
-    connect = ConnectClient()
-    try:
-        connect._ensure_auth()
-        api = connect._api_server.rstrip("/")
-        env_id = connect._env_id
-        # The egress proxy needs a bearer for this host; the SDK owns its authentication.
-        os.environ["CHALK_API_TOKEN"] = connect._access_token
-    finally:
-        connect.close()
-    os.environ["NOTION_TOKEN"] = ws["NOTION_TOKEN"]
-    os.environ["LINEAR_TOKEN"] = ws["LINEAR_TOKEN"]
+    with ConnectClient() as connection:
+        api = connection.api_server
+        env_id = connection.environment_id
+        chalk_credential = Secret.from_value(
+            "CHALK_API_TOKEN", connection.request_headers()["authorization"].removeprefix("Bearer ")
+        )
     hosts = {
         name: urlsplit(url).hostname
         for name, url in (("chalk", api), ("notion", ws["NOTION_URL"]), ("linear", ws["LINEAR_URL"]))
@@ -128,9 +122,9 @@ def main() -> int:
             # An empty allowlist: the three hosts below are the only egress.
             network_policy=NetworkPolicy(allowed_hosts=[]),
         )
-        .add_credentials(hosts["chalk"], Secret.from_local_env("CHALK_API_TOKEN"))
-        .add_credentials(hosts["notion"], Secret.from_local_env("NOTION_TOKEN"))
-        .add_credentials(hosts["linear"], Secret.from_local_env("LINEAR_TOKEN"))
+        .add_credentials(hosts["chalk"], chalk_credential)
+        .add_credentials(hosts["notion"], Secret.from_value("NOTION_TOKEN", ws["NOTION_TOKEN"]))
+        .add_credentials(hosts["linear"], Secret.from_value("LINEAR_TOKEN", ws["LINEAR_TOKEN"]))
     )
     env = {
         "CHALK_API_HOST": api,
