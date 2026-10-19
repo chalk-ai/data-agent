@@ -9,12 +9,11 @@
 Each app gets its own random bearer token. The tokens and URLs are written to .workspace.env
 (gitignored), where run.py picks them up. Re-running reuses the existing tokens.
 
-    ./deploy_workspace.py [--env-id <environment>]
+    ./deploy_workspace.py
 """
 
 from __future__ import annotations
 
-import argparse
 import os
 import secrets
 from pathlib import Path
@@ -32,12 +31,6 @@ def read_env_file() -> dict[str, str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env-id", default=None)
-    parser.add_argument("--prefix", default="fake")
-    args = parser.parse_args()
-    if args.env_id:
-        os.environ["CHALK_ENVIRONMENT"] = args.env_id
     from chalkcompute import Image, ScalingGroup, Secret
 
     saved = read_env_file()
@@ -56,7 +49,7 @@ def main() -> None:
         os.environ[f"FAKE_{token_key}"] = token
         sg = ScalingGroup(
             image=image,
-            name=f"{args.prefix}-{app}",
+            name=f'fake-{app}',
             cpu="500m",
             memory="1Gi",
             env={"WORKSPACE_KIND": app, "WORKSPACE_TOKEN": Secret.from_local_env(f"FAKE_{token_key}")},

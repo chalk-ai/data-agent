@@ -6,7 +6,7 @@
 # ///
 """Run the data agent in a Chalk sandbox with controlled access to ChalkSQL, Notion and Linear.
 
-    ./run.py ["<question>"] --data-prefix gs://<bucket>/data-agent [--model anthropic/claude-sonnet-5-5]
+    ./run.py ["<question>"] --data-prefix gs://<bucket>/data-agent
 
 Needs .workspace.env from deploy_workspace.py, and Chalk credentials from your existing `chalk login` (or the
 CHALK_* environment variables). Writes the run's trace to traces/<timestamp>.jsonl.
@@ -53,9 +53,7 @@ print("GET NOTION_URL/v1/pages/x (no token)|" + get("NOTION_URL/v1/pages/x"))
 """
 
 
-def load_config(env_id: str | None) -> dict[str, str]:
-    if env_id:
-        os.environ["CHALK_ENVIRONMENT"] = env_id
+def load_config() -> dict[str, str]:
     env_file = HERE / ".workspace.env"
     if not env_file.exists():
         sys.exit("Run ./deploy_workspace.py first.")
@@ -91,14 +89,12 @@ def render(event: dict) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("question", nargs="?", default=DEFAULT_QUESTION)
-    parser.add_argument("--model", default="anthropic/claude-sonnet-5-5")
-    parser.add_argument("--env-id", default=None)
     parser.add_argument(
         "--data-prefix", required=True, help="where the parquet tables live, e.g. gs://bucket/data-agent"
     )
     args = parser.parse_args()
 
-    ws = load_config(args.env_id)
+    ws = load_config()
     from chalkcompute import ConnectClient, Image, NetworkPolicy, Sandbox, SandboxClient, Secret
 
     connect = ConnectClient()
@@ -141,7 +137,7 @@ def main() -> int:
         "CHALK_ENVIRONMENT_ID": env_id,
         "NOTION_URL": ws["NOTION_URL"],
         "LINEAR_URL": ws["LINEAR_URL"],
-        "AGENT_MODEL": args.model,
+        "AGENT_MODEL": 'anthropic/claude-sonnet-5-5',
         "DATA_PREFIX": args.data_prefix,
         "PYTHONUNBUFFERED": "1",
     }
