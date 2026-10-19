@@ -68,7 +68,7 @@ sandbox:
 ## Run it
 
 You need [`uv`](https://docs.astral.sh/uv/), the Chalk CLI, and a Chalk environment with
-sandboxes and the model router enabled. Credentials come from `chalk config`.
+sandboxes and the model router enabled. Credentials come from the SDK’s ambient credentials from `chalk login`.
 
 ```bash
 # 1. Build the tables and put them where your environment's ChalkSQL can read them.
@@ -89,3 +89,10 @@ handful of read endpoints, and the sandbox policy stays the same.
 ## License
 
 Apache-2.0. The company, accounts and documents are fictional.
+
+## Local authentication
+
+The SDK reads credentials, API host, and the selected environment from your existing
+`chalk login` in `~/.chalk.yml`, including project-scoped and default logins.
+For unattended runs, `CHALK_CLIENT_ID` and `CHALK_CLIENT_SECRET` remain supported. Where available, `--env-id`
+overrides the target environment; otherwise the SDK uses your login or environment settings.

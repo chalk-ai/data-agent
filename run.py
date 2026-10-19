@@ -8,7 +8,7 @@
 
     ./run.py ["<question>"] --data-prefix gs://<bucket>/data-agent [--model anthropic/claude-sonnet-5-5]
 
-Needs .workspace.env from deploy_workspace.py, and Chalk credentials from `chalk config` (or the
+Needs .workspace.env from deploy_workspace.py, and Chalk credentials from your existing `chalk login` (or the
 CHALK_* environment variables). Writes the run's trace to traces/<timestamp>.jsonl.
 
 What the sandbox can reach is the whole point:
@@ -24,13 +24,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import sys
 import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
-import httpx
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_QUESTION = (
@@ -56,34 +54,13 @@ print("GET NOTION_URL/v1/pages/x (no token)|" + get("NOTION_URL/v1/pages/x"))
 
 
 def load_config(env_id: str | None) -> dict[str, str]:
-    if "CHALK_CLIENT_ID" not in os.environ:
-        cfg = json.loads(subprocess.check_output(["chalk", "config", "--json"]))
-        os.environ["CHALK_API_SERVER"] = cfg["apiServer"]["value"]
-        os.environ["CHALK_CLIENT_ID"] = cfg["clientId"]["value"]
-        os.environ["CHALK_CLIENT_SECRET"] = cfg["clientSecret"]["value"]
-        os.environ.setdefault("CHALK_ENVIRONMENT_ID", cfg["environment"]["value"])
     if env_id:
-        os.environ["CHALK_ENVIRONMENT_ID"] = env_id
+        os.environ["CHALK_ENVIRONMENT"] = env_id
     env_file = HERE / ".workspace.env"
     if not env_file.exists():
         sys.exit("Run ./deploy_workspace.py first.")
     pairs = (line.split("=", 1) for line in env_file.read_text().splitlines() if "=" in line)
     return {k.strip(): v.strip() for k, v in pairs}
-
-
-def chalk_access_token() -> str:
-    """A short-lived token for the agent, minted from this machine's client credentials."""
-    resp = httpx.post(
-        f"{os.environ['CHALK_API_SERVER'].rstrip('/')}/v1/oauth/token",
-        json={
-            "client_id": os.environ["CHALK_CLIENT_ID"],
-            "client_secret": os.environ["CHALK_CLIENT_SECRET"],
-            "grant_type": "client_credentials",
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["access_token"]
 
 
 def render(event: dict) -> str:
@@ -122,10 +99,17 @@ def main() -> int:
     args = parser.parse_args()
 
     ws = load_config(args.env_id)
-    from chalkcompute import Image, NetworkPolicy, Sandbox, SandboxClient, Secret
+    from chalkcompute import ConnectClient, Image, NetworkPolicy, Sandbox, SandboxClient, Secret
 
-    api = os.environ["CHALK_API_SERVER"].rstrip("/")
-    os.environ["CHALK_API_TOKEN"] = chalk_access_token()
+    connect = ConnectClient()
+    try:
+        connect._ensure_auth()
+        api = connect._api_server.rstrip("/")
+        env_id = connect._env_id
+        # The egress proxy needs a bearer for this host; the SDK owns its authentication.
+        os.environ["CHALK_API_TOKEN"] = connect._access_token
+    finally:
+        connect.close()
     os.environ["NOTION_TOKEN"] = ws["NOTION_TOKEN"]
     os.environ["LINEAR_TOKEN"] = ws["LINEAR_TOKEN"]
     hosts = {
@@ -154,7 +138,7 @@ def main() -> int:
     )
     env = {
         "CHALK_API_HOST": api,
-        "CHALK_ENVIRONMENT_ID": os.environ["CHALK_ENVIRONMENT_ID"],
+        "CHALK_ENVIRONMENT_ID": env_id,
         "NOTION_URL": ws["NOTION_URL"],
         "LINEAR_URL": ws["LINEAR_URL"],
         "AGENT_MODEL": args.model,

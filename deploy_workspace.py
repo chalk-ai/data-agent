@@ -15,26 +15,13 @@ Each app gets its own random bearer token. The tokens and URLs are written to .w
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import secrets
-import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ENV_FILE = HERE / ".workspace.env"
 APPS = ("notion", "linear")
-
-
-def load_chalk_env(env_id: str | None) -> None:
-    if "CHALK_CLIENT_ID" not in os.environ:
-        cfg = json.loads(subprocess.check_output(["chalk", "config", "--json"]))
-        os.environ["CHALK_API_SERVER"] = cfg["apiServer"]["value"]
-        os.environ["CHALK_CLIENT_ID"] = cfg["clientId"]["value"]
-        os.environ["CHALK_CLIENT_SECRET"] = cfg["clientSecret"]["value"]
-        os.environ.setdefault("CHALK_ENVIRONMENT_ID", cfg["environment"]["value"])
-    if env_id:
-        os.environ["CHALK_ENVIRONMENT_ID"] = env_id
 
 
 def read_env_file() -> dict[str, str]:
@@ -49,7 +36,8 @@ def main() -> None:
     parser.add_argument("--env-id", default=None)
     parser.add_argument("--prefix", default="fake")
     args = parser.parse_args()
-    load_chalk_env(args.env_id)
+    if args.env_id:
+        os.environ["CHALK_ENVIRONMENT"] = args.env_id
     from chalkcompute import Image, ScalingGroup, Secret
 
     saved = read_env_file()
